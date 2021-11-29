@@ -36,7 +36,7 @@ def download_webpage(url, header):
         f.write(soup.prettify())
 
 def readFromFile():
-    with open("table.txt") as f:
+    with open("test1.txt") as f:
         soup = BeautifulSoup(f,'lxml')
         return soup
 
@@ -54,13 +54,12 @@ def get_all_rows(tb):
     table = tb.find('tbody')
     print([[td.text.strip() for td in tr.find_all("td")] for tr in table.find_all("tr")])
 
-
 if __name__ == "__main__":
     # soup = get_soup(link, headers2)
     # print(soup.prettify())
-    download_webpage(link,headers2)
+    # download_webpage(link,headers2)
 
-    # soup = readFromFile()
+    soup = readFromFile()
     # # print(soup.prettify())
-    # tb = find_table(soup)
-    # get_all_rows(tb)
+    tb = find_table(soup)
+    get_all_rows(tb)
