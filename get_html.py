@@ -30,7 +30,7 @@ url = 'https://www.sharesansar.com/company/adbl'
 selector = '#myTableCPriceHistory > tbody:nth-child(2) > tr:nth-child(1)'
 delay = 20  # seconds
 
-browser = webdriver.Firefox('/media/anon/Storage/Coding/Web Scrapping/geckodriver-v0.30.0-linux64/geckodriver')
+browser = webdriver.Firefox('geckodriver-v0.30.0-linux64/geckodriver') # path to webdriver
 browser.maximize_window()
 browser.get(url)
 
