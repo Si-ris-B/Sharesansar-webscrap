@@ -1,25 +1,16 @@
 # importing the libraries
 
 from bs4 import BeautifulSoup
-import time
 import requests
-
-
-headers2 = {
-"Connection": "keep-alive",
-"DNT": "1",
-"Upgrade-Insecure-Requests": "1",
-"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36",
-"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-"Sec-Fetch-Site": "none",
-"Sec-Fetch-Mode": "navigate",
-"Sec-Fetch-Dest": "document",
-"Referer": "https://www.sharesansar.com/",
-"Accept-Encoding": "gzip, deflate, br",
-"Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8"
-}
-
-link = 'https://www.sharesansar.com/company/adbl#cpricehistory'
+import csv
+import time
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support import select
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
+import random
 
 def get_soup(url, header):
 
@@ -35,31 +26,118 @@ def download_webpage(url, header):
     with open("test.txt", "w") as f:
         f.write(soup.prettify())
 
-def readFromFile():
-    with open("test1.txt") as f:
+def readFromFile(filename):
+    with open(filename) as f:
         soup = BeautifulSoup(f,'lxml')
         return soup
 
-def find_table(soup):
-    table = soup.find('table', { 'id': 'myTableCPriceHistory'})
+
+def get_headers(table):
     t1 = table.find("thead")
-    # print(t1)
-    # t2 = t1.find('tr')
-    # print(t2)
-    print([th.text.strip() for th in t1.find("tr").find_all("th")])
-    
-    return table
+    return [th.text.strip() for th in t1.find("tr").find_all("th")]
+ 
 
 def get_all_rows(tb):
     table = tb.find('tbody')
-    print([[td.text.strip() for td in tr.find_all("td")] for tr in table.find_all("tr")])
+    return [[td.text.strip() for td in tr.find_all("td")] for tr in table.find_all("tr")]
+
+    from selenium.webdriver.common.by import By
+
+def click_and_download(number,delay, table_list, browser):
+
+    if number > 5:
+        i = 4
+    else:
+        i = number
+
+    xpath1 = f'/html/body/div[2]/div/section[2]/div[3]/div/div/div/div[2]/div/div[1]/div[2]/div/div[8]/div/div/div[5]/span/a[{i}]'
+    button = browser.find_element(By.XPATH,xpath1)
+    
+    button.click()
+
+    WebDriverWait(browser, delay).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+    )
+    time.sleep(random.randint(5,10))
+    html = browser.page_source
+    table_list.append(get_table(html))
+
+def find_table(soup):
+    table = soup.find('table', { 'id': 'myTableCPriceHistory'})
+    return table
+
+def get_table(html,number=1):
+    if html:
+        soup = BeautifulSoup(html, 'lxml')        
+        # with open(f"adbl-{number}.txt", "w") as f:
+        #     f.write(soup.prettify())
+        return find_table(soup)
+
+  
 
 if __name__ == "__main__":
-    # soup = get_soup(link, headers2)
-    # print(soup.prettify())
-    # download_webpage(link,headers2)
+    
+    company_symbol = 'mbl'
 
-    soup = readFromFile()
-    # # print(soup.prettify())
-    tb = find_table(soup)
-    get_all_rows(tb)
+
+    html = None
+    url = f'https://www.sharesansar.com/company/{company_symbol}'
+    selector = '#myTableCPriceHistory > tbody:nth-child(2) > tr:nth-child(1)'
+    delay = 20  # seconds
+    table_list = []
+
+    browser = webdriver.Firefox(executable_path='/geckodriver-v0.30.0-linux64/geckodriver')#path to geckodriver
+
+    browser.maximize_window()
+    browser.get(url)
+
+    try:
+        # wait for button to be enabled
+        WebDriverWait(browser, delay).until(
+            EC.element_to_be_clickable((By.XPATH, '//*[@id="btn_cpricehistory"]'))
+        )
+        button = browser.find_element(By.XPATH,'//*[@id="btn_cpricehistory"]')
+        button.click()
+
+        # wait for data to be loaded
+        WebDriverWait(browser, delay).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+        )
+
+        select = select.Select(browser.find_element(By.CSS_SELECTOR,'#myTableCPriceHistory_length > label:nth-child(1) > select:nth-child(1)'))
+        select.select_by_visible_text("50")
+
+        WebDriverWait(browser, delay).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+        )
+        time.sleep(5)
+        html = browser.page_source
+        table_list.append(get_table(html))
+    except TimeoutException:
+        print('Loading took too much time!')
+    
+
+    for i in range(2,5): # Instead of 5, Put a number of the page in table till which you want to extract table
+        try:
+            click_and_download(i,delay, table_list, browser)
+        except TimeoutException:
+            print('Loading took too much time!')
+            break
+
+
+    browser.quit()
+
+    headers = get_headers(table_list[0])
+
+
+    with open(f'{company_symbol}.csv','w') as c:
+        csv_writer = csv.writer(c, delimiter=',', quotechar='"', 
+        quoting=csv.QUOTE_MINIMAL)
+        
+        csv_writer.writerow(headers)
+
+        for table in table_list:
+
+            rowlist = get_all_rows(table)
+            for row in rowlist:
+                csv_writer.writerow(row)
