@@ -86,7 +86,7 @@ if __name__ == "__main__":
     delay = 20  # seconds
     table_list = []
 
-    browser = webdriver.Firefox(executable_path='/geckodriver-v0.30.0-linux64/geckodriver')#path to geckodriver
+    browser = webdriver.Firefox('/geckodriver-v0.30.0-linux64/geckodriver')#path to geckodriver
 
     browser.maximize_window()
     browser.get(url)
