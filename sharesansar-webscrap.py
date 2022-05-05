@@ -73,20 +73,15 @@ def get_table(html,number=1):
         #     f.write(soup.prettify())
         return find_table(soup)
 
-  
-
-if __name__ == "__main__":
-    
-    company_symbol = 'mbl'
-
-
+def get_stock_table(company_symbol,delay=10):
     html = None
     url = f'https://www.sharesansar.com/company/{company_symbol}'
+    global selector
     selector = '#myTableCPriceHistory > tbody:nth-child(2) > tr:nth-child(1)'
-    delay = 20  # seconds
+    delay = delay  # seconds
     table_list = []
 
-    browser = webdriver.Firefox('/geckodriver-v0.30.0-linux64/geckodriver')#path to geckodriver
+    browser = webdriver.Firefox(executable_path='geckodriver-v0.30.0-linux64/geckodriver') #path to geckodriver
 
     browser.maximize_window()
     browser.get(url)
@@ -104,8 +99,8 @@ if __name__ == "__main__":
             EC.presence_of_element_located((By.CSS_SELECTOR, selector))
         )
 
-        select = select.Select(browser.find_element(By.CSS_SELECTOR,'#myTableCPriceHistory_length > label:nth-child(1) > select:nth-child(1)'))
-        select.select_by_visible_text("50")
+        select1 = select.Select(browser.find_element(By.CSS_SELECTOR,'#myTableCPriceHistory_length > label:nth-child(1) > select:nth-child(1)'))
+        select1.select_by_visible_text("50")
 
         WebDriverWait(browser, delay).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, selector))
@@ -117,7 +112,7 @@ if __name__ == "__main__":
         print('Loading took too much time!')
     
 
-    for i in range(2,5): # Instead of 5, Put a number of the page in table till which you want to extract table
+    for i in range(2,51): # Instead of 5, Put a number of the page in table till which you want to extract table
         try:
             click_and_download(i,delay, table_list, browser)
         except TimeoutException:
@@ -129,8 +124,10 @@ if __name__ == "__main__":
 
     headers = get_headers(table_list[0])
 
+    return table_list, headers
 
-    with open(f'{company_symbol}.csv','w') as c:
+def save_table_to_csv(csvname, table, headers):
+    with open(csvname,'w') as c:
         csv_writer = csv.writer(c, delimiter=',', quotechar='"', 
         quoting=csv.QUOTE_MINIMAL)
         
@@ -141,3 +138,11 @@ if __name__ == "__main__":
             rowlist = get_all_rows(table)
             for row in rowlist:
                 csv_writer.writerow(row)
+
+if __name__ == "__main__":
+    
+    company_symbol = 'nabil'
+
+    headers, table = get_stock_table(company_symbol,5)
+    
+    save_table_to_csv(f'{company_symbol}.csv', table, headers)
