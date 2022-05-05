@@ -126,7 +126,7 @@ def get_stock_table(company_symbol,delay=10):
 
     return table_list, headers
 
-def save_table_to_csv(csvname, table, headers):
+def save_table_to_csv(csvname, table_list, headers):
     with open(csvname,'w') as c:
         csv_writer = csv.writer(c, delimiter=',', quotechar='"', 
         quoting=csv.QUOTE_MINIMAL)
