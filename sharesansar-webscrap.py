@@ -39,20 +39,34 @@ def get_headers(table):
 
 def get_all_rows(tb):
     table = tb.find('tbody')
+    # print(table)
     return [[td.text.strip() for td in tr.find_all("td")] for tr in table.find_all("tr")]
 
     from selenium.webdriver.common.by import By
 
 def click_and_download(number,delay, table_list, browser):
-
+    flag = False
     if number > 5:
         i = 4
+        try:
+            xpath2 = "/html/body/div[2]/div/section[2]/div[3]/div/div/div/div[2]/div/div[1]/div[2]/div/div[8]/div/div/div[5]/span/a[6]"
+            button2 = browser.find_element(By.XPATH,xpath2).text
+            print(button2)
+            if number == int(button2)-1:
+                i = 5
+            elif number == int(button2):
+                i = 6
+                flag = True
+        except:
+            pass
     else:
         i = number
 
     xpath1 = f'/html/body/div[2]/div/section[2]/div[3]/div/div/div/div[2]/div/div[1]/div[2]/div/div[8]/div/div/div[5]/span/a[{i}]'
     button = browser.find_element(By.XPATH,xpath1)
     
+    
+
     button.click()
 
     WebDriverWait(browser, delay).until(
@@ -61,6 +75,8 @@ def click_and_download(number,delay, table_list, browser):
     time.sleep(random.randint(5,10))
     html = browser.page_source
     table_list.append(get_table(html))
+
+    return flag
 
 def find_table(soup):
     table = soup.find('table', { 'id': 'myTableCPriceHistory'})
@@ -81,7 +97,7 @@ def get_stock_table(company_symbol,delay=10):
     delay = delay  # seconds
     table_list = []
 
-    browser = webdriver.Firefox(executable_path='geckodriver-v0.30.0-linux64/geckodriver') #path to geckodriver
+    browser = webdriver.Firefox(executable_path='/geckodriver-v0.30.0-linux64/geckodriver') #path to geckodriver
 
     browser.maximize_window()
     browser.get(url)
@@ -112,9 +128,12 @@ def get_stock_table(company_symbol,delay=10):
         print('Loading took too much time!')
     
 
-    for i in range(2,51): # Instead of 5, Put a number of the page in table till which you want to extract table
+    for i in range(2,60): # Instead of 5, Put a number of the page in table till which you want to extract table
+        # print(i)
         try:
-            click_and_download(i,delay, table_list, browser)
+            flag = click_and_download(i,delay, table_list, browser)
+            if flag:
+                break
         except TimeoutException:
             print('Loading took too much time!')
             break
@@ -141,8 +160,8 @@ def save_table_to_csv(csvname, table_list, headers):
 
 if __name__ == "__main__":
     
-    company_symbol = 'nabil'
+    company_symbol = 'ahpc'
 
     headers, table = get_stock_table(company_symbol,5)
-    
+    # print(headers, table)
     save_table_to_csv(f'{company_symbol}.csv', table, headers)
