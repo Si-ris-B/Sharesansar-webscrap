@@ -124,7 +124,7 @@ def get_stock_table(company_symbol,delay=10):
 
     headers = get_headers(table_list[0])
 
-    return table_list, headers
+    return headers, table_list
 
 def save_table_to_csv(csvname, table_list, headers):
     with open(csvname,'w') as c:
